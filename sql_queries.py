@@ -66,12 +66,12 @@ staging_songs_table_create = ("""
 
 songplay_table_create = ("""
     CREATE TABLE IF NOT EXISTS songplays(
-        songplay_id    INTEGER IDENTITY(0,1) PRIMARY KEY
-        , start_time    TIMESTAMP NOT NULL
-        , user_id       INTEGER NOT NULL
+        songplay_id     INTEGER IDENTITY(0,1) PRIMARY KEY
+        , start_time    TIMESTAMP REFERENCES time(start_time)
+        , user_id       INTEGER REFERENCES users(user_id)
         , level         VARCHAR
-        , song_id       VARCHAR NOT NULL
-        , artist_id     VARCHAR NOT NULL
+        , song_id       VARCHAR REFERENCES songs(song_id)
+        , artist_id     VARCHAR REFERENCES artists(artist_id)
         , session_id    INTEGER
         , location      VARCHAR
         , user_agent    VARCHAR
@@ -93,7 +93,7 @@ song_table_create = ("""
     CREATE TABLE IF NOT EXISTS songs(
         song_id     VARCHAR PRIMARY KEY 
         , title     VARCHAR
-        , artist_id VARCHAR
+        , artist_id VARCHAR NOT NULL
         , year      INTEGER
         , duration  DECIMAL
     )
@@ -168,6 +168,7 @@ songplay_table_insert = ("""
         FROM staging_events AS tbl_se
         JOIN staging_songs AS tbl_ss ON tbl_se.artist = tbl_ss.artist_name
             AND tbl_se.song = tbl_ss.title
+            AND tbl_se.length = tbl_ss.duration
         WHERE lower(tbl_se.page) = 'nextsong'
 """)
 
@@ -207,9 +208,10 @@ artist_table_insert = ("""
 """)
 
 # ref. Extract TimeStamp elements: https://docs.aws.amazon.com/de_de/redshift/latest/dg/r_EXTRACT_function.html
+# using "songplays" table for higher integrity
 time_table_insert = ("""
     INSERT INTO time(start_time, hour, day, week, month, year, weekday)
-    SELECT DISTINCT TIMESTAMP 'epoch' + tbl_se.ts/1000 * INTERVAL '1 second' AS start_time
+    SELECT DISTINCT start_time
         , EXTRACT(hour FROM start_time)  AS hour
         , EXTRACT(day FROM start_time)  AS day
         , EXTRACT(week FROM start_time)  AS week
@@ -217,14 +219,12 @@ time_table_insert = ("""
         , EXTRACT(year FROM start_time)  AS year
         , EXTRACT(dow FROM start_time)  AS weekday -- instead I might need to use the command below
         -- , DATE_PART(dow, start_time) AS weekday
-    FROM staging_events AS tbl_se
-    WHERE tbl_se.ts IS NOT NULL
-        AND lower(tbl_se.page) = 'nextsong'
+    FROM songplays
+    WHERE start_time IS NOT NULL
 """)
 
 # QUERY LISTS
-
-create_table_queries = [staging_events_table_create, staging_songs_table_create, songplay_table_create, user_table_create, song_table_create, artist_table_create, time_table_create]
+create_table_queries = [staging_events_table_create, staging_songs_table_create, user_table_create, song_table_create, artist_table_create, time_table_create, songplay_table_create]
 drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
 copy_table_queries = [staging_events_copy, staging_songs_copy]
 insert_table_queries = [songplay_table_insert, user_table_insert, song_table_insert, artist_table_insert, time_table_insert]
