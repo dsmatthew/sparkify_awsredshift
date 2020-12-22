@@ -51,28 +51,28 @@ staging_events_table_create= ("""
 
 staging_songs_table_create = ("""
     CREATE TABLE IF NOT EXISTS staging_songs(
-        num_songs           INTEGER,
-        artist_id           VARCHAR,
-        artist_latitude     VARCHAR,
-        artist_longitude    VARCHAR,
-        artist_location     VARCHAR,
-        artist_name         VARCHAR,
-        song_id             VARCHAR,
-        title               VARCHAR,
-        duration            DECIMAL,
-        year                INTEGER
+        num_songs           INTEGER
+        , artist_id           VARCHAR
+        , artist_latitude     DECIMAL
+        , artist_longitude    DECIMAL
+        , artist_location     VARCHAR
+        , artist_name         VARCHAR
+        , song_id             VARCHAR
+        , title               VARCHAR
+        , duration            DECIMAL
+        , year                INTEGER
         )
 """)
 
 songplay_table_create = ("""
     CREATE TABLE IF NOT EXISTS songplays(
-        song_play_id    INTEGER IDENTITY(0,1)
-        , start_time    TIMESTAMP
-        , user_id       VARCHAR
+        songplay_id    INTEGER IDENTITY(0,1) PRIMARY KEY
+        , start_time    TIMESTAMP NOT NULL
+        , user_id       INTEGER NOT NULL
         , level         VARCHAR
-        , song_id       VARCHAR
-        , artist_id     VARCHAR
-        , session_id    VARCHAR
+        , song_id       VARCHAR NOT NULL
+        , artist_id     VARCHAR NOT NULL
+        , session_id    INTEGER
         , location      VARCHAR
         , user_agent    VARCHAR
     )
@@ -112,7 +112,7 @@ artist_table_create = ("""
 
 time_table_create = ("""
     CREATE TABLE IF NOT EXISTS time(
-        start_time      TIMESTAMP
+        start_time      TIMESTAMP PRIMARY KEY
         , hour          INTEGER
         , day           INTEGER
         , week          INTEGER
